@@ -4,6 +4,7 @@ import Home from "../views/Home.vue"
 import Game from "../views/Game.vue"
 import Landing from "../views/Landing.vue"
 import About from "../views/About.vue"
+import Redirect from "../views/Redirect.vue"
 
 const router = createRouter({
   history: createWebHistory(),
@@ -11,6 +12,8 @@ const router = createRouter({
 
     { path: '/', name: 'home', component: Home },
     { path: '/game', name: 'game', component: Game },
+
+    { path: '/monique', name: 'monique', component: Redirect },
 
     { path: '/about', name: 'about', component: About },
 
