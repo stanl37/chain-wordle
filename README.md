@@ -1,9 +1,19 @@
-# Vue Wordle
+# FLITZLE
 
-[Live demo](https://vue-wordle.netlify.app/)
+A Vue implementation of the [Wordle game](https://www.nytimes.com/games/wordle/index.html), modified to use in a [Flitz](https://thetab.com/us/dartmouth/2015/12/22/dartmouth-blitz-1506)!
 
-A Vue implementation of the [Wordle game](https://www.powerlanguage.co.uk/wordle/). This is just for fun and doesn't aim to 100% replicate the original.
+Flitzle will create a series of Wordle games based on each word of an input sentence. A word may be a maximum of 11 characters long (databases for words of length 1 through 11 are included). Completing one Wordle game will move the player onto the next until the sentence is completed. Punctuation, hyphens, and other non-letter characters are automatically filled and set as correct.
 
-You can make your own Wordle and send it to friends by base64-encoding a word and include it as the URL query, e.g. https://vue-wordle.netlify.app/?YmxpbXA= (this will also allow words that are not in the dictionary.)
+### Word Databases
+Created using list of words from [this repo](https://github.com/dwyl/english-words). Wrote and used a quick Python script to create separate files for length-1 thru length-11 words.
 
-This repository is open sourced for learning purposes only - the original creator(s) of Wordle own all applicable rights to the game itself.
+### Usage with Live Implementation
+Base58-encode a sentence and include it as a URL query. For example: https://mysite.com/?Qvm7PtB6FR1ArCMMgQVtXyeg8BSSVtK9CnAUQQX74 (this will generate )
+
+### Local Usage
+Clone the repository to a local directory and run the following:
+```properties
+cd <project_dir>
+npm install
+npm run dev
+```

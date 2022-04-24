@@ -1,16 +1,31 @@
 <script setup lang="ts">
 import { onUnmounted } from 'vue'
-import { getWordOfTheDay, allWords } from './words'
-import Keyboard from './Keyboard.vue'
-import { LetterState } from './types'
+import { getAnswer } from '../query'
+import { LetterState } from '../types'
+
+import Keyboard from '../components/Keyboard.vue'
+
+// MANUALLY SET HOW MANY GUESSES AVAILABLE!
+const guesses = 1;
 
 // Get word of the day
-const answer = getWordOfTheDay()
+const answer = getAnswer()!
+const word_length = answer.length
+console.log("length:", word_length)
+
+// Dynamically import length-n words
+let allWords: Array<string>
+async function getAllWords(): Promise<void> { 
+  const myData = await import(`../data/words_data`);
+  allWords = eval('myData.allWords' + word_length.toString())
+  console.log("allWords:", allWords)
+}
+getAllWords()
 
 // Board state. Each tile is represented as { letter, state }
 const board = $ref(
-  Array.from({ length: 6 }, () =>
-    Array.from({ length: 5 }, () => ({
+  Array.from({ length: guesses }, () =>
+    Array.from({ length: word_length }, () => ({
       letter: '',
       state: LetterState.INITIAL
     }))
@@ -75,7 +90,7 @@ function completeRow() {
     const guess = currentRow.map((tile) => tile.letter).join('')
     if (!allWords.includes(guess) && guess !== answer) {
       shake()
-      showMessage(`Not in word list`)
+      showMessage(`Not in word list!`)
       return
     }
 
@@ -112,12 +127,9 @@ function completeRow() {
       // yay!
       setTimeout(() => {
         grid = genResultGrid()
-        showMessage(
-          ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Phew'][
-            currentRowIndex
-          ],
-          -1
-        )
+        let response = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Wonderful', 'Amazing', 'Awesome', 'Bravo', 'Superb', 'Spectacular', 'Sensational', 'Dazzling']
+        const random = Math.floor(Math.random() * response.length);
+        showMessage("You won! 😃 " + response[random] + "!", -1)
         success = true
       }, 1600)
     } else if (currentRowIndex < board.length - 1) {
@@ -129,7 +141,7 @@ function completeRow() {
     } else {
       // game over :(
       setTimeout(() => {
-        showMessage(answer.toUpperCase(), -1)
+        showMessage("You lost! 😔 Answer: " + answer.toUpperCase(), -1)
       }, 1600)
     }
   } else {
@@ -169,6 +181,11 @@ function genResultGrid() {
     })
     .join('\n')
 }
+
+const gameGrid = {
+  guesses: guesses,
+  word_length: word_length
+}
 </script>
 
 <template>
@@ -179,7 +196,13 @@ function genResultGrid() {
     </div>
   </Transition>
   <header>
-    <h1>VVORDLE</h1>
+    <h1>FLITZLE</h1>
+
+    <router-link
+      id="back-btn"
+      to="/"
+      >Back</router-link
+    >
     <a
       id="source-link"
       href="https://github.com/yyx990803/vue-wordle"
@@ -221,13 +244,13 @@ function genResultGrid() {
 <style scoped>
 #board {
   display: grid;
-  grid-template-rows: repeat(6, 1fr);
+  grid-template-rows: repeat(v-bind('gameGrid.guesses'), 1fr);
   grid-gap: 5px;
   padding: 10px;
   box-sizing: border-box;
   --height: min(420px, calc(var(--vh, 100vh) - 310px));
   height: var(--height);
-  width: min(350px, calc(var(--height) / 6 * 5));
+  width: min(350px, calc(var(--height) / v-bind('gameGrid.guesses') * v-bind('gameGrid.word_length')));
   margin: 0px auto;
 }
 .message {
@@ -248,7 +271,7 @@ function genResultGrid() {
 }
 .row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(v-bind('gameGrid.word_length'), 1fr);
   grid-gap: 5px;
 }
 .tile {
