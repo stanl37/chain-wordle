@@ -4,26 +4,24 @@ import router from '../router/router'
 import { utils } from '../utils/gameutils';
 import ls from '../router/localStore'
 
-// MANUALLY SET HOW MANY GUESSES AVAILABLE FOR EACH GAME!
+// MANUALLY SET HOW MANY GUESSES AVAILABLE PER GAME
+// default: 6
 let guesses = 6;
 
 // Store b58 string
 let b58 = getQuery('s')
-console.log(b58)
 let old_b58 = ls.get('b58')
 if (old_b58 != b58) {
   resetGame(false)
+  ls.set('b58', b58)
 }
-ls.set('b58', b58)
 
-
-// Get info from sentence
+// Get info from sentence string
 const [num_words, max_word_length, msgArray] = utils.parseSentence(getAnswer())
 
 // Local storage of board
 utils.storeMainBoard(guesses, num_words, max_word_length, msgArray)
 console.log("Main board saved in local storage.")
-
 
 // Create main board
 let board = utils.createMainBoardObject()
@@ -31,15 +29,12 @@ console.log("Main board object created: ", msgArray)
 
 // On click
 function clickHandler(row_idx:number) {
-  // check if click allowed
-  const currentRow = board[row_idx]
-  const state = currentRow[0]["state"]
-  // proceed
   let route = { name: 'game', query : { row: row_idx } }
   router.push(route)
   console.log("Routing:", route)
 }
 
+// Function for main page hover animations
 function getClass(row_idx:number) {
   const currentRow = board[row_idx]
   const state = currentRow[0]["state"]
@@ -50,7 +45,7 @@ function getClass(row_idx:number) {
   }
 }
 
-
+// reset
 function resetGame(wantConfirm:boolean) {
   if (wantConfirm && !confirm('Are you sure?')) {
     return

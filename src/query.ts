@@ -1,15 +1,10 @@
 /**
- * Handles URL query to word string.
+ * query.ts
+ * Functions relevant to query parsing and base58 decoding.
  */
 
 import bs58 from 'bs58'
 import router from './router/router'
-
-// go to about page, silently
-function goHome() {
-  router.push("/landing")
-  return
-}
 
 export function getQuery(queryparam:string) {
 
@@ -20,16 +15,16 @@ export function getQuery(queryparam:string) {
     const query = location.search.match(`${queryparam}=([^&]*)`)[1]
     return query
   } catch (e) {
-    return
+    return undefined
   }
 
 }
 
 export function getAnswer() {
 
-  // if no url query, push back to main page silently
+  // no url query
   if (!location.search) {
-    goHome()
+    return undefined
   }
 
   // proper url query form:
@@ -42,7 +37,7 @@ export function getAnswer() {
     return word
   } catch (e) {
     // alert(e)
-    goHome()
+    return undefined
   }
 
 }
