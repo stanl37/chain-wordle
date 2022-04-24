@@ -169,11 +169,13 @@ function completeRow() {
       setTimeout(() => { back() }, 10000)
       // localstorage
       row['state'] = 'won';
+      break
 
     case 'NEXT':
       // move to next
       currentRowIndex++
       setTimeout(() => { allowInput = true }, 1600)
+      break
 
     case 'LOSS':
       // display win msg
@@ -193,6 +195,7 @@ function completeRow() {
       setTimeout(() => { back() }, 10000)
       // localstorage
       row['state'] = 'lost';
+      break
 
   }
 
