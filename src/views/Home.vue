@@ -3,6 +3,7 @@ import { getAnswerArray } from '../query'
 import { LetterState } from '../types'
 import router from '../router/router'
 import ls from '../router/localStore'
+import { utils } from '../utils/gameutils';
 
 // MANUALLY SET HOW MANY GUESSES AVAILABLE FOR EACH GAME!
 let guesses = 6;
@@ -50,14 +51,7 @@ if (!existing) {
 }
 
 // generate empty board
-let board = $ref(
-  Array.from({ length: ls.get('main')['num_words'] }, () =>
-    Array.from({ length: ls.get('main')['max_word_length'] }, () => ({
-      letter: '',
-      state: LetterState.INITIAL
-    }))
-  )
-)
+let board = utils.generateEmptyBoard(num_words, max_word_length)
 
 // update board based on storage
 for (let i = 0; i < num_words; i++) {
