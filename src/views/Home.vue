@@ -2,39 +2,57 @@
 import { getAnswerArray } from '../query'
 import { LetterState } from '../types'
 import router from '../router/router'
+import ls from '../router/localStore'
 
-// "will you go to formal with me"
-// 6RR3MbFXByBuyusNuRoseNu34tkpvDXqz3XhCCDi
-const msgArray = getAnswerArray()
+// MANUALLY SET HOW MANY GUESSES AVAILABLE FOR EACH GAME!
+let guesses = 6;
+
+// get list of words
+const msgArray = getAnswerArray()!
 if (msgArray == null) { window.location.href = '/landing'; }
 console.log("msgArray:", msgArray)
+const num_words = msgArray.length
 
-// localStorage of board
-// make board if doesn't exist
-// possible row states:
-//    "incomplete" -> working on it, not done
-//    "won" -> finished, got the word
-//    "lost" -> finished, didn't the word
-
-let existing = localStorage.getItem('row0');
-if (!existing) {
-  for (let i = 0; i < msgArray.length; i++) {
-    let dict = { word: msgArray[i], state: "incomplete" }  
-    localStorage.setItem(`row${i}`, JSON.stringify(dict));
-  }
-}
-
-// get longest word (for board length)
+// get longest word
 function findLongestWord(msgArray: string[]) {
   var longestWord = [...msgArray].sort(function(a, b) { return b.length - a.length; });
   return longestWord[0].length;
 }
-const longestWord = findLongestWord(msgArray);
+const max_word_length = findLongestWord(msgArray);
 
-// generate board
+// game template
+let game_template = {
+  solution: "",
+  gameStatus: "IN_PROGRESS",  // IN_PROGRESS, WON, LOST
+  rowIndex: 0,
+  board_height: 0,
+  board_length: 0,
+  currentWords: null,
+  evaluations: null,
+}
+
+// localStorage of board
+let existing = ls.get('main');
+if (!existing) {
+  let main_dict = {}
+  main_dict['num_words'] = num_words
+  main_dict['max_word_length'] = max_word_length
+  for (let i = 0; i < msgArray.length; i++) {
+    let game = JSON.parse(JSON.stringify(game_template))
+    game['solution'] = msgArray[i]
+    game['board_height'] = guesses
+    game['board_length'] = msgArray[i].length
+    game['currentWords'] = Array(guesses).fill("")
+    game['evaluations'] = Array(guesses).fill(Array(msgArray[i].length).fill(null))
+    main_dict[`game${i}`] = game
+  }
+  ls.set(`main`, main_dict)
+}
+
+// generate empty board
 let board = $ref(
-  Array.from({ length: msgArray.length }, () =>
-    Array.from({ length: longestWord }, () => ({
+  Array.from({ length: ls.get('main')['num_words'] }, () =>
+    Array.from({ length: ls.get('main')['max_word_length'] }, () => ({
       letter: '',
       state: LetterState.INITIAL
     }))
@@ -42,19 +60,26 @@ let board = $ref(
 )
 
 // update board based on storage
-const states = {
-  "won": LetterState.CORRECT,
-  "lost": LetterState.INCORRECT,
-  "incomplete": LetterState.HIDDEN
-}
-for (let i = 0; i < msgArray.length; i++) {
+for (let i = 0; i < num_words; i++) {
   const currentRow = board[i]
   const currentWord = msgArray[i]
-  let rowState = JSON.parse(localStorage.getItem(`row${i}`))["state"]
-  console.log(rowState)
+  
+  let gameStatus = ls.get('main')[`game${i}`]['gameStatus']
+  console.log("status", gameStatus)
+  let state
+  switch (gameStatus) {
+    case "IN_PROGRESS":
+      state = LetterState.HIDDEN
+      break
+    case "WON":
+      state = LetterState.CORRECT
+      break
+    case "LOST":
+      state = LetterState.INCORRECT
+      break
+  }
   for (let j = 0; j < currentWord.length; j++) {
-    currentRow[j].letter = currentWord[j]
-    currentRow[j].state = states[rowState]
+    currentRow[j].state = state
   }
 }
 
@@ -70,12 +95,6 @@ function clickHandler(row_idx) {
   router.push(route)
 }
 
-// grid size dict, for <style> section
-let gameGrid = {
-  guesses: msgArray.length,
-  word_length: longestWord
-}
-
 function getClass(row_idx) {
   const currentRow = board[row_idx]
   const state = currentRow[0]["state"]
@@ -87,6 +106,8 @@ function getClass(row_idx) {
   }
 }
 
+// TODO: make rebuild a function
+/*
 function resetGame() {
   if (!confirm('Are you sure?')) { return }
   console.log("resetting")
@@ -109,6 +130,7 @@ function resetGame() {
   }
   }
 }
+*/
 
 </script>
 
@@ -158,19 +180,19 @@ function resetGame() {
 <style scoped>
 #board {
   display: grid;
-  grid-template-rows: repeat(v-bind('gameGrid.guesses'), 1fr);
+  grid-template-rows: repeat(v-bind('num_words'), 1fr);
   grid-gap: 5px;
   padding: 10px;
   box-sizing: border-box;
   --height: min(420px, calc(var(--vh, 100vh) - 310px));
   height: var(--height);
-  width: min(350px, calc(var(--height) / v-bind('gameGrid.guesses') * v-bind('gameGrid.word_length')));
+  width: min(350px, calc(var(--height) / v-bind('num_words') * v-bind('max_word_length')));
   margin: 0px auto;
 }
 
 .row {
   display: grid;
-  grid-template-columns: repeat(v-bind('gameGrid.word_length'), 1fr);
+  grid-template-columns: repeat(v-bind('max_word_length'), 1fr);
   grid-gap: 5px;
 }
 .tile {
