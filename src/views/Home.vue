@@ -1,30 +1,43 @@
 <script setup lang="ts">
-import { getAnswer } from '../query'
+import { getAnswer, getQuery } from '../query'
 import router from '../router/router'
 import { utils } from '../utils/gameutils';
+import ls from '../router/localStore'
 
 // MANUALLY SET HOW MANY GUESSES AVAILABLE FOR EACH GAME!
 let guesses = 6;
 
-// get info from sentence
+// Store b58 string
+let b58 = getQuery('s')
+console.log(b58)
+let old_b58 = ls.get('b58')
+if (old_b58 != b58) {
+  resetGame(false)
+}
+ls.set('b58', b58)
+
+
+// Get info from sentence
 const [num_words, max_word_length, msgArray] = utils.parseSentence(getAnswer())
 
-// local storage of board
+// Local storage of board
 utils.storeMainBoard(guesses, num_words, max_word_length, msgArray)
+console.log("Main board saved in local storage.")
 
-// create main board
+
+// Create main board
 let board = utils.createMainBoardObject()
+console.log("Main board object created: ", msgArray)
 
-// on click
+// On click
 function clickHandler(row_idx:number) {
   // check if click allowed
   const currentRow = board[row_idx]
   const state = currentRow[0]["state"]
-  if (state != 'hidden') { return }
   // proceed
   let route = { name: 'game', query : { row: row_idx } }
-  console.log(route)
   router.push(route)
+  console.log("Routing:", route)
 }
 
 function getClass(row_idx:number) {
@@ -37,31 +50,16 @@ function getClass(row_idx:number) {
   }
 }
 
-// TODO: make rebuild a function
-/*
-function resetGame() {
-  if (!confirm('Are you sure?')) { return }
-  console.log("resetting")
 
-  // resetting local storage
-  for (var i = 0; i < localStorage.length; i++) {
-    let key = localStorage.key(i)
-    console.log(key)
-    let row_data = JSON.parse(localStorage.getItem(key))
-    row_data["state"] = "incomplete"
-    localStorage.setItem(key, JSON.stringify(row_data));
-  }
-
-  // resetting letter states
-  for (let i = 0; i < msgArray.length; i++) {
-    const currentRow = board[i]
-    const currentWord = msgArray[i]
-    for (let j = 0; j < currentWord.length; j++) {
-      currentRow[j].state = LetterState.HIDDEN
-  }
-  }
+function resetGame(wantConfirm:boolean) {
+  if (wantConfirm && !confirm('Are you sure?')) {
+    return
+    }
+  console.log("Resetting local storage...")
+  ls.clear()  // resetting local storage
+  location.reload()
 }
-*/
+
 
 </script>
 
@@ -104,7 +102,7 @@ function resetGame() {
   </div>
   <br>
   <footer>
-    <a @click="resetGame">reset</a>
+    <a @click="resetGame(true)">reset</a>
 </footer>
 </template>
 

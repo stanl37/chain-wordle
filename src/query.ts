@@ -11,13 +11,13 @@ function goHome() {
   return
 }
 
-export function getQuery() {
+export function getQuery(queryparam:string) {
 
   if (!location.search) {
     return
   }
   try {
-    const query = location.search.match("row=([^&]*)")[1]
+    const query = location.search.match(`${queryparam}=([^&]*)`)[1]
     return query
   } catch (e) {
     return

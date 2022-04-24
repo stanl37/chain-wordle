@@ -3,22 +3,25 @@ import { onUnmounted } from 'vue'
 import { getQuery } from '../query'
 import { LetterState } from '../types'
 import router from '../router/router'
+import ls from '../router/localStore'
+import { utils } from '../utils/gameutils';
 
 import Keyboard from '../components/Keyboard.vue'
 
-// MANUALLY SET HOW MANY GUESSES AVAILABLE!
-let guesses = 6;
+// Get data from local storage
+const row_idx = getQuery('row')
+let data = ls.get('main')
+const game_data = data[`game${row_idx}`]
 
-// Get word
-const row_idx = getQuery()
-const row = JSON.parse(localStorage.getItem(`row${row_idx}`))
-const answer = row["word"]
-console.log("answer for this game:", answer)
-const word_length = answer.length
+let guesses = game_data['board_height']
+const answer = game_data['solution']
+const word_length = game_data['board_length']
+
+console.log("Answer for this game:", answer)
 console.log("word_length:", word_length)
 
 // Dynamically import length-n words
-let allWords: Array<string>
+let allWords: string[]
 async function getAllWords(): Promise<void> { 
   const myData = await import(`../data/words_data`);
   allWords = eval('myData.allWords' + word_length.toString())
@@ -26,19 +29,38 @@ async function getAllWords(): Promise<void> {
 }
 getAllWords()
 
-// Board state. Each tile is represented as { letter, state }
-let board = $ref(
-  Array.from({ length: guesses }, () =>
-    Array.from({ length: word_length }, () => ({
-      letter: '',
-      state: LetterState.INITIAL
-    }))
-  )
-)
+// Create Board object
+let board = utils.createEmptyBoardObject(guesses, word_length)
 
 // Current active row.
 let currentRowIndex = $ref(0)
 const currentRow = $computed(() => board[currentRowIndex])
+
+// load up local storage
+if (game_data['rowIndex'] != 0) {
+  currentRowIndex = game_data['rowIndex'];
+
+  // text
+  for (let i = 0; i < currentRowIndex; i++) {
+    let word = game_data['currentWords'][i]
+    currentRowIndex = i
+    for (let j in word) {
+      fillTile(word[j].toLowerCase())
+    }
+    currentRowIndex = game_data['rowIndex'];
+  }
+
+  // color
+  for (let i = 0; i < currentRowIndex; i++) {
+    let evals = game_data['evaluations'][i]
+    currentRowIndex = i
+    currentRow.forEach((tile, i) => {
+      tile.state = evals[i]
+    })
+    currentRowIndex = game_data['rowIndex']
+  }
+}
+  
 
 // Feedback state: message and shake
 let message = $ref('')
@@ -89,15 +111,6 @@ function clearTile() {
   }
 }
 
-// localStorage game template
-let game_template = {
-  "boardState": ["", "", "","","", ""],  // each word in each idx
-  "evaluations": [null, null, null, null, null], // each null is a length-n list: correct, present, absent
-  "rowIndex": 0,  // current idx
-  "solution": "",
-  "gameStatus": "IN_PROGRESS",  // "IN_PROGRESS", "WIN", "LOSS"
-}
-
 
 // handling for completing a row (errors, wins, losses)
 function completeRow() {
@@ -117,46 +130,63 @@ function completeRow() {
     return
   }
 
-  // marking answers
+  // identify correct/present/absent
+  let evals = []
   const answerLetters: (string | null)[] = answer.split('')
   currentRow.forEach((tile, i) => {  // first pass: mark correct ones
     if (answerLetters[i] === tile.letter) {
+      
+      evals[i] = 'correct'
+
       tile.state = letterStates[tile.letter] = LetterState.CORRECT
       answerLetters[i] = null
     }
   })
-  currentRow.forEach((tile) => {  // second pass: mark the present
+  currentRow.forEach((tile, i) => {  // second pass: mark the present
     if (!tile.state && answerLetters.includes(tile.letter)) {
+      
+      evals[i] = 'present'
+
       tile.state = LetterState.PRESENT
+      
       answerLetters[answerLetters.indexOf(tile.letter)] = null
       if (!letterStates[tile.letter]) {
         letterStates[tile.letter] = LetterState.PRESENT
       }
     }
   })
-  currentRow.forEach((tile) => { // 3rd pass: mark absent
+  currentRow.forEach((tile, i) => { // 3rd pass: mark absent
     if (!tile.state) {
+
+      evals[i] = 'absent'
+
       tile.state = LetterState.ABSENT
       if (!letterStates[tile.letter]) {
         letterStates[tile.letter] = LetterState.ABSENT
       }
     }
   })
-
+  
   // computing a full row
   allowInput = false
   let winState = ""
   if (currentRow.every((tile) => tile.state === LetterState.CORRECT)) {
-    winState = 'WIN'
-  } else if (currentRowIndex < board.length - 1) {
-    winState = 'NEXT'
+    winState = 'WON'
+  } else if (game_data['rowIndex'] < board.length - 1) {
+    winState = 'IN_PROGRESS'
   } else {
-    winState = 'LOSS'
+    winState = 'LOST'
   }
+
+  // push localstorage
+  data[`game${row_idx}`]['currentWords'][currentRowIndex] = guess
+  data[`game${row_idx}`]['evaluations'][currentRowIndex] = evals
+  data[`game${row_idx}`]['gameStatus'] = winState
+  data[`game${row_idx}`]['rowIndex']++
 
   // full row logic by cases
   switch (winState) {
-    case 'WIN':
+    case 'WON':
       // display win msg
       setTimeout(() => {
         grid = genResultGrid()
@@ -165,42 +195,50 @@ function completeRow() {
         showMessage("You won! 😃 " + response[random] + "!", -1)
         success = true
       }, 1600)
-      // go home
-      setTimeout(() => { back() }, 10000)
-      // localstorage
-      row['state'] = 'won';
+      // go home if haven't left yet
+      setTimeout(() => {
+        if (getQuery('row') == row_idx) { back() }
+      }, 10000)
       break
 
-    case 'NEXT':
+    case 'IN_PROGRESS':
       // move to next
       currentRowIndex++
       setTimeout(() => { allowInput = true }, 1600)
       break
 
-    case 'LOSS':
+    case 'LOST':
       // display win msg
       setTimeout(() => { showMessage("You lost! 😔 Answer: " + answer.toUpperCase(), -1) }, 1600)
+      
       // add a final row, showing word that you didn't get (if incorrect)
-      gameGrid.guesses += 1
+      guesses += 1
       setTimeout(() => {
-        board[guesses] = []
+        board[guesses-1] = Array(answer.length)
         for (let i = 0; i < answer.length; i++) {
-          board[guesses][i] = {
+          board[guesses-1][i] = {
             letter: answer[i],
             state: LetterState.INCORRECT
           }
         }
       }, 1600)
-      // go home
-      setTimeout(() => { back() }, 10000)
-      // localstorage
-      row['state'] = 'lost';
+
+      // add changes to localstorage
+      data[`game${row_idx}`]['rowIndex']++
+      data[`game${row_idx}`]['board_height']++
+      data[`game${row_idx}`]['currentWords'].push(answer)
+      data[`game${row_idx}`]['evaluations'].push(Array(word_length).fill("incorrect"))      
+  
+      // go home if haven't left yet
+      setTimeout(() => {
+        if (getQuery('row') == row_idx) { back() }
+      }, 10000)
       break
 
   }
 
   // push changes to localstorage
-  localStorage.setItem(`row${row_idx}`, JSON.stringify(row));
+  ls.set('main', data)
 
 }
 
@@ -234,11 +272,6 @@ function genResultGrid() {
       return row.map((tile) => icons[tile.state]).join('')
     })
     .join('\n')
-}
-
-let gameGrid = {
-  guesses: guesses,
-  word_length: word_length
 }
 
 function back() {
@@ -299,13 +332,13 @@ function back() {
 <style scoped>
 #board {
   display: grid;
-  grid-template-rows: repeat(v-bind('gameGrid.guesses'), 1fr);
+  grid-template-rows: repeat(v-bind('guesses'), 1fr);
   grid-gap: 5px;
   padding: 10px;
   box-sizing: border-box;
   --height: min(420px, calc(var(--vh, 100vh) - 310px));
   height: var(--height);
-  width: min(350px, calc(var(--height) / v-bind('gameGrid.guesses') * v-bind('gameGrid.word_length')));
+  width: min(350px, calc(var(--height) / v-bind('guesses') * v-bind('word_length')));
   margin: 0px auto;
 }
 .message {
@@ -326,7 +359,7 @@ function back() {
 }
 .row {
   display: grid;
-  grid-template-columns: repeat(v-bind('gameGrid.word_length'), 1fr);
+  grid-template-columns: repeat(v-bind('word_length'), 1fr);
   grid-gap: 5px;
 }
 .tile {

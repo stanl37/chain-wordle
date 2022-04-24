@@ -1,5 +1,4 @@
 import { createApp } from 'vue'
-import Vue3Storage, { StorageType } from "vue3-storage"
 import App from './App.vue'
 import router from './router/router.ts'
 import Storage from 'vue-ls';

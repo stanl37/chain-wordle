@@ -83,9 +83,9 @@ export function createMainBoardObject() {
  * Used in creating the main board (each row is a different word, for the main screen).
  * Also used in creating game boards (regular Wordle).
  * 
- * Params:
- *  - rows: how many rows to have (how many words in the sentence, how many guesses in the Wordle)
- *  - row_length: how many boxes per row (word length)
+ * @param rows how many rows to have (how many words in the sentence, how many guesses in the Wordle)
+ * @param row_length how many boxes per row (word length)
+ * @returns Board object
  */
 export function createEmptyBoardObject(rows:number, row_length:number) {
   let board = $ref(
@@ -118,7 +118,7 @@ export function updateMainBoardObject(board:{ letter: string; state: LetterState
     const currentWord = data[`game${i}`]['solution']
     
     let gameStatus = data[`game${i}`]['gameStatus']
-    console.log("status", gameStatus)
+    console.log(`Game${i} status:`, gameStatus)
     let state
     switch (gameStatus) {
       case "IN_PROGRESS":
@@ -135,6 +135,7 @@ export function updateMainBoardObject(board:{ letter: string; state: LetterState
         break
     }
     for (let j = 0; j < currentWord.length; j++) {
+      currentRow[j].letter = currentWord[j]
       currentRow[j].state = state
     }
   }
