@@ -124,6 +124,7 @@ function completeRow() {
 
     allowInput = false
     if (currentRow.every((tile) => tile.state === LetterState.CORRECT)) {
+
       // win!
       setTimeout(() => {
         grid = genResultGrid()
@@ -132,18 +133,21 @@ function completeRow() {
         showMessage("You won! 😃 " + response[random] + "!", -1)
         success = true
       }, 1600)
+
     } else if (currentRowIndex < board.length - 1) {
+
       // wrong guess
       currentRowIndex++
       setTimeout(() => {
         allowInput = true
       }, 1600)
+
     } else {
+
       // game over :(
       setTimeout(() => {
         showMessage("You lost! 😔 Answer: " + answer.toUpperCase(), -1)
       }, 1600)
-
       // add a final row, showing word that you didn't get (if incorrect)
       gameGrid.guesses += 1
       setTimeout(() => {

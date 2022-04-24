@@ -5,10 +5,15 @@
 import bs58 from 'bs58'
 import router from './router/router'
 
-// go to main page, silently
+// go to about page, silently
 function goHome() {
-  router.push("/")
+  router.push("/landing")
   return
+}
+
+export function getAnswerArray() {
+  const word = getAnswer()
+  return word?.split(" ")
 }
 
 export function getAnswer() {

@@ -1,21 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import Page1 from "../views/Page1.vue"
+import Home from "../views/Home.vue"
 import Game from "../views/Game.vue"
+import Landing from "../views/Landing.vue"
+import About from "../views/About.vue"
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: Page1
-    },
-    {
-      path: '/game',
-      name: 'game',
-      component: Game
-    }
+
+    { path: '/', name: 'home', component: Home },
+    { path: '/game', name: 'game', component: Game },
+
+    { path: '/landing', name: 'landing', component: Landing},
+    { path: '/:pathMatch(.*)*', name: 'not-found', component: Landing },
+    { path: '/:pathMatch(.*)', name: 'bad-not-found', component: Landing },
+
+    { path: '/about', name: 'about', component: About },
+    
   ]
 })
 
