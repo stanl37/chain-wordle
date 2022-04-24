@@ -1,7 +1,8 @@
 import { createApp } from 'vue'
-import Vue3Storage, { StorageType } from "vue3-storage";
+import Vue3Storage, { StorageType } from "vue3-storage"
 import App from './App.vue'
 import router from './router/router.ts'
+import Storage from 'vue-ls';
 
 // resize for scaling the board size
 window.addEventListener('resize', onResize)
@@ -13,7 +14,7 @@ function onResize() {
   document.body.style.setProperty('--vh', window.innerHeight + 'px')
 }
 
-const app = createApp(App);
-app.use(router);
-app.use(Vue3Storage, { namespace: "pro_", storage: StorageType.Local })
-app.mount("#app");
+const app = createApp(App)
+app.use(router)
+app.use(Storage, {storage: 'local' })
+app.mount("#app")

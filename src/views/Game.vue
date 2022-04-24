@@ -89,14 +89,27 @@ function clearTile() {
   }
 }
 
+// localStorage game template
+let game_template = {
+  "boardState": ["", "", "","","", ""],  // each word in each idx
+  "evaluations": [null, null, null, null, null], // each null is a length-n list: correct, present, absent
+  "rowIndex": 0,  // current idx
+  "solution": "",
+  "gameStatus": "IN_PROGRESS",  // "IN_PROGRESS", "WIN", "LOSS"
+}
+
+
 // handling for completing a row (errors, wins, losses)
 function completeRow() {
+
+  // not enough letters
   if (!~currentRow.every((tile) => tile.letter)) {
     shake()
     showMessage('Not enough letters')
     return
   }
 
+  // word not in word list
   const guess = currentRow.map((tile) => tile.letter).join('')
   if (!allWords.includes(guess) && guess !== answer) {
     shake()
@@ -104,16 +117,15 @@ function completeRow() {
     return
   }
 
+  // marking answers
   const answerLetters: (string | null)[] = answer.split('')
-  // first pass: mark correct ones
-  currentRow.forEach((tile, i) => {
+  currentRow.forEach((tile, i) => {  // first pass: mark correct ones
     if (answerLetters[i] === tile.letter) {
       tile.state = letterStates[tile.letter] = LetterState.CORRECT
       answerLetters[i] = null
     }
   })
-  // second pass: mark the present
-  currentRow.forEach((tile) => {
+  currentRow.forEach((tile) => {  // second pass: mark the present
     if (!tile.state && answerLetters.includes(tile.letter)) {
       tile.state = LetterState.PRESENT
       answerLetters[answerLetters.indexOf(tile.letter)] = null
@@ -122,8 +134,7 @@ function completeRow() {
       }
     }
   })
-  // 3rd pass: mark absent
-  currentRow.forEach((tile) => {
+  currentRow.forEach((tile) => { // 3rd pass: mark absent
     if (!tile.state) {
       tile.state = LetterState.ABSENT
       if (!letterStates[tile.letter]) {
@@ -132,56 +143,59 @@ function completeRow() {
     }
   })
 
+  // computing a full row
   allowInput = false
+  let winState = ""
   if (currentRow.every((tile) => tile.state === LetterState.CORRECT)) {
-
-    // win!
-    setTimeout(() => {
-      grid = genResultGrid()
-      let response = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Wonderful', 'Amazing', 'Awesome', 'Bravo', 'Superb', 'Spectacular', 'Sensational', 'Dazzling']
-      const random = Math.floor(Math.random() * response.length);
-      showMessage("You won! 😃 " + response[random] + "!", -1)
-      success = true
-    }, 1600)
-    // go home
-    setTimeout(() => {
-      back()
-    }, 10000)
-    // localstorage
-    row['state'] = 'won';
-
+    winState = 'WIN'
   } else if (currentRowIndex < board.length - 1) {
-
-    // wrong guess
-    currentRowIndex++
-    setTimeout(() => {
-      allowInput = true
-    }, 1600)
-
+    winState = 'NEXT'
   } else {
-
-    // game over :(
-    setTimeout(() => {
-      showMessage("You lost! 😔 Answer: " + answer.toUpperCase(), -1)
-    }, 1600)
-    // add a final row, showing word that you didn't get (if incorrect)
-    gameGrid.guesses += 1
-    setTimeout(() => {
-      board[guesses] = []
-      for (let i = 0; i < answer.length; i++) {
-        board[guesses][i] = {
-          letter: answer[i],
-          state: LetterState.INCORRECT
-        }
-      }
-    }, 1600)
-    // go home
-    setTimeout(() => {
-      back()
-    }, 10000)
-    // localstorage
-    row['state'] = 'lost';
+    winState = 'LOSS'
   }
+
+  // full row logic by cases
+  switch (winState) {
+    case 'WIN':
+      // display win msg
+      setTimeout(() => {
+        grid = genResultGrid()
+        let response = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Wonderful', 'Amazing', 'Awesome', 'Bravo', 'Superb', 'Spectacular', 'Sensational', 'Dazzling']
+        const random = Math.floor(Math.random() * response.length);
+        showMessage("You won! 😃 " + response[random] + "!", -1)
+        success = true
+      }, 1600)
+      // go home
+      setTimeout(() => { back() }, 10000)
+      // localstorage
+      row['state'] = 'won';
+
+    case 'NEXT':
+      // move to next
+      currentRowIndex++
+      setTimeout(() => { allowInput = true }, 1600)
+
+    case 'LOSS':
+      // display win msg
+      setTimeout(() => { showMessage("You lost! 😔 Answer: " + answer.toUpperCase(), -1) }, 1600)
+      // add a final row, showing word that you didn't get (if incorrect)
+      gameGrid.guesses += 1
+      setTimeout(() => {
+        board[guesses] = []
+        for (let i = 0; i < answer.length; i++) {
+          board[guesses][i] = {
+            letter: answer[i],
+            state: LetterState.INCORRECT
+          }
+        }
+      }, 1600)
+      // go home
+      setTimeout(() => { back() }, 10000)
+      // localstorage
+      row['state'] = 'lost';
+
+  }
+
   // push changes to localstorage
   localStorage.setItem(`row${row_idx}`, JSON.stringify(row));
 

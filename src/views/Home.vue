@@ -2,34 +2,53 @@
 import { getAnswerArray } from '../query'
 import { LetterState } from '../types'
 import router from '../router/router'
+import ls from '../router/localStore'
 
-// "will you go to formal with me"
-// 6RR3MbFXByBuyusNuRoseNu34tkpvDXqz3XhCCDi
-const msgArray = getAnswerArray()
+// MANUALLY SET HOW MANY GUESSES AVAILABLE FOR EACH GAME!
+let guesses = 6;
+
+// get list of words
+const msgArray = getAnswerArray()!
 if (msgArray == null) { window.location.href = '/landing'; }
 console.log("msgArray:", msgArray)
+const num_words = msgArray.length
 
-// localStorage of board
-// make board if doesn't exist
-// possible row states:
-//    "incomplete" -> working on it, not done
-//    "won" -> finished, got the word
-//    "lost" -> finished, didn't the word
-
-let existing = localStorage.getItem('row0');
-if (!existing) {
-  for (let i = 0; i < msgArray.length; i++) {
-    let dict = { word: msgArray[i], state: "incomplete" }  
-    localStorage.setItem(`row${i}`, JSON.stringify(dict));
-  }
-}
-
-// get longest word (for board length)
+// get longest word
 function findLongestWord(msgArray: string[]) {
   var longestWord = [...msgArray].sort(function(a, b) { return b.length - a.length; });
   return longestWord[0].length;
 }
 const longestWord = findLongestWord(msgArray);
+
+// game template
+let game_template = {
+  solution: "steve",
+  gameStatus: "IN_PROGRESS",
+  rowIndex: 0,
+  board_height: 0,
+  board_length: 0,
+  currentWords: null,
+  evaluations: null,
+}
+
+// localStorage of board
+let existing = ls.get('main');
+console.log(existing)
+if (!existing) {
+  let main_dict = {}
+  for (let i = 0; i < msgArray.length; i++) {
+    let game = JSON.parse(JSON.stringify(game_template))
+    game['solution'] = msgArray[i]
+    game['board_height'] = guesses
+    game['board_length'] = msgArray[i].length
+    game['currentWords'] = Array(guesses).fill("")
+    game['evaluations'] = Array(guesses).fill(Array(msgArray[i].length).fill(null))
+    main_dict[`game${i}`] = game
+  }
+  ls.set(`main`, main_dict)
+}
+
+// TODO: stopped here
 
 // generate board
 let board = $ref(
