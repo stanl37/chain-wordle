@@ -12,11 +12,13 @@ const router = createRouter({
     { path: '/', name: 'home', component: Home },
     { path: '/game', name: 'game', component: Game },
 
-    { path: '/landing', name: 'landing', component: Landing},
+    { path: '/about', name: 'about', component: About },
+
+    { path: '/landing', name: 'landing', component: Landing },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: Landing },
     { path: '/:pathMatch(.*)', name: 'bad-not-found', component: Landing },
 
-    { path: '/about', name: 'about', component: About },
+    
     
   ]
 })

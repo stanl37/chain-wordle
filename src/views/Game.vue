@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { onUnmounted } from 'vue'
-import { getAnswer } from '../query'
+import { getQuery } from '../query'
 import { LetterState } from '../types'
+import router from '../router/router'
 
 import Keyboard from '../components/Keyboard.vue'
 
 // MANUALLY SET HOW MANY GUESSES AVAILABLE!
-let guesses = 1;
+let guesses = 6;
 
-// Get word of the day
-const answer = getAnswer()!
+// Get word
+const row_idx = getQuery()
+const row = JSON.parse(localStorage.getItem(`row${row_idx}`))
+const answer = row["word"]
+console.log("answer for this game:", answer)
 const word_length = answer.length
-console.log("length:", word_length)
+console.log("word_length:", word_length)
 
 // Dynamically import length-n words
 let allWords: Array<string>
@@ -85,86 +89,102 @@ function clearTile() {
   }
 }
 
+// handling for completing a row (errors, wins, losses)
 function completeRow() {
-  if (currentRow.every((tile) => tile.letter)) {
-    const guess = currentRow.map((tile) => tile.letter).join('')
-    if (!allWords.includes(guess) && guess !== answer) {
-      shake()
-      showMessage(`Not in word list!`)
-      return
-    }
-
-    const answerLetters: (string | null)[] = answer.split('')
-    // first pass: mark correct ones
-    currentRow.forEach((tile, i) => {
-      if (answerLetters[i] === tile.letter) {
-        tile.state = letterStates[tile.letter] = LetterState.CORRECT
-        answerLetters[i] = null
-      }
-    })
-    // second pass: mark the present
-    currentRow.forEach((tile) => {
-      if (!tile.state && answerLetters.includes(tile.letter)) {
-        tile.state = LetterState.PRESENT
-        answerLetters[answerLetters.indexOf(tile.letter)] = null
-        if (!letterStates[tile.letter]) {
-          letterStates[tile.letter] = LetterState.PRESENT
-        }
-      }
-    })
-    // 3rd pass: mark absent
-    currentRow.forEach((tile) => {
-      if (!tile.state) {
-        tile.state = LetterState.ABSENT
-        if (!letterStates[tile.letter]) {
-          letterStates[tile.letter] = LetterState.ABSENT
-        }
-      }
-    })
-
-    allowInput = false
-    if (currentRow.every((tile) => tile.state === LetterState.CORRECT)) {
-
-      // win!
-      setTimeout(() => {
-        grid = genResultGrid()
-        let response = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Wonderful', 'Amazing', 'Awesome', 'Bravo', 'Superb', 'Spectacular', 'Sensational', 'Dazzling']
-        const random = Math.floor(Math.random() * response.length);
-        showMessage("You won! 😃 " + response[random] + "!", -1)
-        success = true
-      }, 1600)
-
-    } else if (currentRowIndex < board.length - 1) {
-
-      // wrong guess
-      currentRowIndex++
-      setTimeout(() => {
-        allowInput = true
-      }, 1600)
-
-    } else {
-
-      // game over :(
-      setTimeout(() => {
-        showMessage("You lost! 😔 Answer: " + answer.toUpperCase(), -1)
-      }, 1600)
-      // add a final row, showing word that you didn't get (if incorrect)
-      gameGrid.guesses += 1
-      setTimeout(() => {
-        board[guesses] = []
-        for (let i = 0; i < answer.length; i++) {
-          board[guesses][i] = {
-            letter: answer[i],
-            state: LetterState.INCORRECT
-          }
-        }
-      }, 1600)
-
-    }
-  } else {
+  if (!~currentRow.every((tile) => tile.letter)) {
     shake()
     showMessage('Not enough letters')
+    return
   }
+
+  const guess = currentRow.map((tile) => tile.letter).join('')
+  if (!allWords.includes(guess) && guess !== answer) {
+    shake()
+    showMessage(`Not in word list!`)
+    return
+  }
+
+  const answerLetters: (string | null)[] = answer.split('')
+  // first pass: mark correct ones
+  currentRow.forEach((tile, i) => {
+    if (answerLetters[i] === tile.letter) {
+      tile.state = letterStates[tile.letter] = LetterState.CORRECT
+      answerLetters[i] = null
+    }
+  })
+  // second pass: mark the present
+  currentRow.forEach((tile) => {
+    if (!tile.state && answerLetters.includes(tile.letter)) {
+      tile.state = LetterState.PRESENT
+      answerLetters[answerLetters.indexOf(tile.letter)] = null
+      if (!letterStates[tile.letter]) {
+        letterStates[tile.letter] = LetterState.PRESENT
+      }
+    }
+  })
+  // 3rd pass: mark absent
+  currentRow.forEach((tile) => {
+    if (!tile.state) {
+      tile.state = LetterState.ABSENT
+      if (!letterStates[tile.letter]) {
+        letterStates[tile.letter] = LetterState.ABSENT
+      }
+    }
+  })
+
+  allowInput = false
+  if (currentRow.every((tile) => tile.state === LetterState.CORRECT)) {
+
+    // win!
+    setTimeout(() => {
+      grid = genResultGrid()
+      let response = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Wonderful', 'Amazing', 'Awesome', 'Bravo', 'Superb', 'Spectacular', 'Sensational', 'Dazzling']
+      const random = Math.floor(Math.random() * response.length);
+      showMessage("You won! 😃 " + response[random] + "!", -1)
+      success = true
+    }, 1600)
+    // go home
+    setTimeout(() => {
+      back()
+    }, 10000)
+    // localstorage
+    row['state'] = 'won';
+
+  } else if (currentRowIndex < board.length - 1) {
+
+    // wrong guess
+    currentRowIndex++
+    setTimeout(() => {
+      allowInput = true
+    }, 1600)
+
+  } else {
+
+    // game over :(
+    setTimeout(() => {
+      showMessage("You lost! 😔 Answer: " + answer.toUpperCase(), -1)
+    }, 1600)
+    // add a final row, showing word that you didn't get (if incorrect)
+    gameGrid.guesses += 1
+    setTimeout(() => {
+      board[guesses] = []
+      for (let i = 0; i < answer.length; i++) {
+        board[guesses][i] = {
+          letter: answer[i],
+          state: LetterState.INCORRECT
+        }
+      }
+    }, 1600)
+    // go home
+    setTimeout(() => {
+      back()
+    }, 10000)
+    // localstorage
+    row['state'] = 'lost';
+  }
+  // push changes to localstorage
+  localStorage.setItem(`row${row_idx}`, JSON.stringify(row));
+
 }
 
 function showMessage(msg: string, time = 1000) {
@@ -203,6 +223,11 @@ let gameGrid = {
   guesses: guesses,
   word_length: word_length
 }
+
+function back() {
+  router.go(-1)
+}
+
 </script>
 
 <template>
@@ -215,17 +240,13 @@ let gameGrid = {
   <header>
     <h1>FLITZLE</h1>
 
-    <router-link
-      id="back-btn"
-      to="/"
-      >Back</router-link
-    >
     <a
-      id="source-link"
-      href="https://github.com/yyx990803/vue-wordle"
-      target="_blank"
-      >Source</a
+      id="back-btn"
+      href="javascript:void(0);"
+      @click="back"
+      >Back</a
     >
+
   </header>
   <div id="board">
     <div

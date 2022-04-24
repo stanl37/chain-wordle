@@ -10,6 +10,10 @@ h1 {
   font-size: 36px;
 }
 
+footer {
+  font-size: 10px;
+}
+
 header {
   border-bottom: 1px solid #ccc;
   margin-bottom: 30px;
@@ -35,6 +39,20 @@ header {
   color: #fff !important;
 }
 
+.grow {
+  opacity: 0.69;
+  transition: all .2s ease-in-out;
+}
+.grow:hover {
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+.hidden {
+  color: #696969 !important;
+  background-color: #696969 !important;
+}
+
 .correct {
   background-color: #6aaa64 !important;
 }
@@ -50,3 +68,4 @@ header {
 .absent {
   background-color: #787c7e !important;
 }
+

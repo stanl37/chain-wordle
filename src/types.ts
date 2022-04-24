@@ -3,5 +3,6 @@ export const enum LetterState {
   CORRECT = 'correct',
   PRESENT = 'present',
   ABSENT = 'absent',
-  INCORRECT = 'incorrect'
+  INCORRECT = 'incorrect',
+  HIDDEN = 'hidden',
 }

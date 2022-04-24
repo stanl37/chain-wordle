@@ -5,3 +5,4 @@ import './views/standard.css'
 <template>
   <RouterView />
 </template>
+
