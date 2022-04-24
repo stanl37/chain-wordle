@@ -64,7 +64,7 @@ function resetGame(wantConfirm:boolean) {
     
     <a
       id="source-link"
-      href="https://github.com/yyx990803/vue-wordle"
+      href="https://github.com/stanl37/chain-wordle"
       target="_blank"
       >Source</a
     >

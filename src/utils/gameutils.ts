@@ -11,7 +11,13 @@ export function parseSentence(sentence:string) {
   const msgArray = sentence.split(' ')
   if (msgArray == null) { return [0, 0, []] }
   const num_words = msgArray.length
-  const max_word_length = [...msgArray].sort(function(a, b) { return b.length - a.length; }).length;
+
+  // TODO: make into lambda?
+  function findLongestWord(msgArray: string[]) {
+    var longestWord = [...msgArray].sort(function(a, b) { return b.length - a.length; });
+    return longestWord[0].length;
+  }
+  const max_word_length = findLongestWord(msgArray);
 
   return [num_words, max_word_length, msgArray] as const
 }

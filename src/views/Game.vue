@@ -21,6 +21,12 @@ console.log("Answer for this game:", answer)
 console.log("word_length:", word_length)
 
 // Dynamically import length-n words
+// DOESN'T WORK ON GITHUB PAGES
+import { allWords1, allWords2, allWords3, allWords4, allWords5, allWords6, allWords7, allWords8, allWords9, allWords10, allWords11 } from '../data/words_data'
+let allWordsArray = [allWords1, allWords2, allWords4, allWords5, allWords6, allWords7, allWords8, allWords9, allWords10, allWords11]
+let allWords = allWordsArray[word_length]
+console.log("allWords:", allWords)
+/*
 let allWords: string[]
 async function getAllWords(): Promise<void> { 
   const myData = await import(`../data/words_data`);
@@ -28,6 +34,7 @@ async function getAllWords(): Promise<void> {
   console.log("allWords:", allWords)
 }
 getAllWords()
+*/
 
 // Create Board object
 let board = utils.createEmptyBoardObject(guesses, word_length)
