@@ -1,84 +1,22 @@
 <script setup lang="ts">
-import { getAnswerArray } from '../query'
-import { LetterState } from '../types'
+import { getAnswer } from '../query'
 import router from '../router/router'
-import ls from '../router/localStore'
 import { utils } from '../utils/gameutils';
 
 // MANUALLY SET HOW MANY GUESSES AVAILABLE FOR EACH GAME!
 let guesses = 6;
 
-// get list of words
-const msgArray = getAnswerArray()!
-if (msgArray == null) { window.location.href = '/landing'; }
-console.log("msgArray:", msgArray)
-const num_words = msgArray.length
+// get info from sentence
+const [num_words, max_word_length, msgArray] = utils.parseSentence(getAnswer())
 
-// get longest word
-function findLongestWord(msgArray: string[]) {
-  var longestWord = [...msgArray].sort(function(a, b) { return b.length - a.length; });
-  return longestWord[0].length;
-}
-const max_word_length = findLongestWord(msgArray);
+// local storage of board
+utils.storeMainBoard(guesses, num_words, max_word_length, msgArray)
 
-// game template
-let game_template = {
-  solution: "",
-  gameStatus: "IN_PROGRESS",  // IN_PROGRESS, WON, LOST
-  rowIndex: 0,
-  board_height: 0,
-  board_length: 0,
-  currentWords: null,
-  evaluations: null,
-}
-
-// localStorage of board
-let existing = ls.get('main');
-if (!existing) {
-  let main_dict = {}
-  main_dict['num_words'] = num_words
-  main_dict['max_word_length'] = max_word_length
-  for (let i = 0; i < msgArray.length; i++) {
-    let game = JSON.parse(JSON.stringify(game_template))
-    game['solution'] = msgArray[i]
-    game['board_height'] = guesses
-    game['board_length'] = msgArray[i].length
-    game['currentWords'] = Array(guesses).fill("")
-    game['evaluations'] = Array(guesses).fill(Array(msgArray[i].length).fill(null))
-    main_dict[`game${i}`] = game
-  }
-  ls.set(`main`, main_dict)
-}
-
-// generate empty board
-let board = utils.generateEmptyBoard(num_words, max_word_length)
-
-// update board based on storage
-for (let i = 0; i < num_words; i++) {
-  const currentRow = board[i]
-  const currentWord = msgArray[i]
-  
-  let gameStatus = ls.get('main')[`game${i}`]['gameStatus']
-  console.log("status", gameStatus)
-  let state
-  switch (gameStatus) {
-    case "IN_PROGRESS":
-      state = LetterState.HIDDEN
-      break
-    case "WON":
-      state = LetterState.CORRECT
-      break
-    case "LOST":
-      state = LetterState.INCORRECT
-      break
-  }
-  for (let j = 0; j < currentWord.length; j++) {
-    currentRow[j].state = state
-  }
-}
+// create main board
+let board = utils.createMainBoardObject()
 
 // on click
-function clickHandler(row_idx) {
+function clickHandler(row_idx:number) {
   // check if click allowed
   const currentRow = board[row_idx]
   const state = currentRow[0]["state"]
@@ -89,10 +27,9 @@ function clickHandler(row_idx) {
   router.push(route)
 }
 
-function getClass(row_idx) {
+function getClass(row_idx:number) {
   const currentRow = board[row_idx]
   const state = currentRow[0]["state"]
-  console.log("yeet", state)
   if (state != 'hidden') {
     return ['row']
   } else {

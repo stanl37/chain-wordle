@@ -11,11 +11,6 @@ function goHome() {
   return
 }
 
-export function getAnswerArray() {
-  const word = getAnswer()
-  return word?.split(" ")
-}
-
 export function getQuery() {
 
   if (!location.search) {
