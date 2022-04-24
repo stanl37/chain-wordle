@@ -6,7 +6,7 @@ import { LetterState } from '../types'
 import Keyboard from '../components/Keyboard.vue'
 
 // MANUALLY SET HOW MANY GUESSES AVAILABLE!
-const guesses = 1;
+let guesses = 1;
 
 // Get word of the day
 const answer = getAnswer()!
@@ -23,7 +23,7 @@ async function getAllWords(): Promise<void> {
 getAllWords()
 
 // Board state. Each tile is represented as { letter, state }
-const board = $ref(
+let board = $ref(
   Array.from({ length: guesses }, () =>
     Array.from({ length: word_length }, () => ({
       letter: '',
@@ -124,7 +124,7 @@ function completeRow() {
 
     allowInput = false
     if (currentRow.every((tile) => tile.state === LetterState.CORRECT)) {
-      // yay!
+      // win!
       setTimeout(() => {
         grid = genResultGrid()
         let response = ['Genius', 'Magnificent', 'Impressive', 'Splendid', 'Great', 'Wonderful', 'Amazing', 'Awesome', 'Bravo', 'Superb', 'Spectacular', 'Sensational', 'Dazzling']
@@ -133,7 +133,7 @@ function completeRow() {
         success = true
       }, 1600)
     } else if (currentRowIndex < board.length - 1) {
-      // go the next row
+      // wrong guess
       currentRowIndex++
       setTimeout(() => {
         allowInput = true
@@ -143,6 +143,19 @@ function completeRow() {
       setTimeout(() => {
         showMessage("You lost! 😔 Answer: " + answer.toUpperCase(), -1)
       }, 1600)
+
+      // add a final row, showing word that you didn't get (if incorrect)
+      gameGrid.guesses += 1
+      setTimeout(() => {
+        board[guesses] = []
+        for (let i = 0; i < answer.length; i++) {
+          board[guesses][i] = {
+            letter: answer[i],
+            state: LetterState.INCORRECT
+          }
+        }
+      }, 1600)
+
     }
   } else {
     shake()
@@ -182,7 +195,7 @@ function genResultGrid() {
     .join('\n')
 }
 
-const gameGrid = {
+let gameGrid = {
   guesses: guesses,
   word_length: word_length
 }

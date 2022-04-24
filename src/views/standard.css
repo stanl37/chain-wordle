@@ -28,6 +28,7 @@ header {
   top: 0.5em;
 }
 
+.incorrect,
 .correct,
 .present,
 .absent {
@@ -40,6 +41,10 @@ header {
 
 .present {
   background-color: #c9b458 !important;
+}
+
+.incorrect {
+  background-color: #ff4851 !important;
 }
 
 .absent {
