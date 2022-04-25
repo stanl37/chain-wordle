@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import bs58 from 'bs58'
 
-let message = $ref("message")
+let message = $ref("earth the blue marble")
 const b58 = $computed(() => bs58.encode(new TextEncoder().encode(message)))
 let url = $computed(() => location.origin + "/?s=" + b58)
 
@@ -9,7 +9,7 @@ let url = $computed(() => location.origin + "/?s=" + b58)
 
 <template>
 <body>
-  <input v-model="message" placeholder="earth the blue marble">
+  <input v-model="message">
   <br>
   <p>Link:</p>
   <a :href="url">{{ url }}</a>
