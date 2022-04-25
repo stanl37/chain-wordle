@@ -9,7 +9,7 @@ let url = $computed(() => location.origin + "/?s=" + b58)
 
 <template>
 <body>
-  <input v-model="message" placeholder="sentence, here">
+  <input v-model="message" placeholder="earth the blue marble">
   <br>
   <p>Link:</p>
   <a :href="url">{{ url }}</a>
